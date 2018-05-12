@@ -44,6 +44,8 @@ class Slider {
     const cw = ctx.canvas.width;
     const ch = ctx.canvas.height;
     const pi = Math.PI;
+    const r = 10; // radius of handles
+    let diff; // path from slider top to handle in radians
     // sliders center position
     let center = (canvas.width > canvas.height) ? {x: cw*2/3, y: ch/2} : {x: cw/2, y: ch*2/3};
 
@@ -51,11 +53,9 @@ class Slider {
     function drawSliders() {
       ctx.lineWidth = 15;
       ctx.strokeStyle = '#eee';
-      let r;
       for (let i = 0; i < options.sliders.length; i++) {
-        r = options.sliders[i].radius;
         ctx.beginPath();
-        ctx.arc(center.x, center.y, r, 0, 2*pi, false);
+        ctx.arc(center.x, center.y, options.sliders[i].radius, 0, 2*pi, false);
         ctx.stroke();
       }
     }
@@ -63,13 +63,20 @@ class Slider {
     // make array of handles
     const handles = [];
     for (let i = 0; i < options.sliders.length; i++) {
-      handles.push({r: options.sliders[i].radius, x: center.x, y: center.y - options.sliders[i].radius});
+      handles.push({r: options.sliders[i].radius, x: center.x, y: center.y - options.sliders[i].radius, color: options.sliders[i].color});
     }
 
-    // draw handles
+    // draw handles & colored paths
     function drawHandles() {
-      const r = 10;
       handles.forEach(function(handle) {
+        // draw paths
+        diff = Math.atan2(handle.y - center.y + 0.00001, handle.x - center.x + 0.00001);
+        ctx.beginPath();
+        ctx.arc(center.x, center.y, handle.r, 1.5*pi, diff, false);
+        ctx.lineWidth = 10;
+        ctx.strokeStyle = handle.color;
+        ctx.stroke();
+        // draw handles
         ctx.beginPath();
         ctx.arc(handle.x, handle.y, r, 0, 2*pi, false);
         ctx.fillStyle = "#eeefef";
@@ -83,7 +90,7 @@ class Slider {
     // move handle
     function moveHandle() {
       let mouseX, mouseY;
-      let x, y, z;
+      let x, y, z, z1;
       let mouseDown;
       console.log('moveHandles!');
       // listen to mouse up
@@ -94,7 +101,6 @@ class Slider {
 
       function redrawHandles(z) {
         handles.forEach(function(handle) {
-          let z1;
           // check if slider was clicked
           if (z < handle.r + 10 && z > handle.r - 10 && mouseDown) {
             // get mouse coordinates inside canvas
@@ -134,13 +140,38 @@ class Slider {
         console.log('z:' + z);
 
         redrawHandles(z);
-      });
 
-      // drag handle on mouse down
-      ctx.canvas.addEventListener("mousemove", function() {
-        redrawHandles(z);
+        if (mouseDown) {
+          // drag handle on mouse down
+          ctx.canvas.addEventListener("mousemove", function() {
+            redrawHandles(z);
+          });
+        } else {
+          ctx.canvas.removeEventListener("mousemove", function() {
+            redrawHandles(z);
+          });
+        }
       });
+    }
 
+    // Add touch screen support
+    document.addEventListener("touchstart", touch2Mouse, true);
+    document.addEventListener("touchmove", touch2Mouse, true);
+    document.addEventListener("touchend", touch2Mouse, true);
+    function touch2Mouse(e) {
+      console.log('touchtomouse');
+      var theTouch = e.changedTouches[0];
+      var mouseEv;
+      switch(e.type) {
+        case "touchstart": mouseEv="mousedown"; break;
+        case "touchend":   mouseEv="mouseup"; break;
+        case "touchmove":  mouseEv="mousemove"; break;
+        default: return;
+      }
+      var mouseEvent = document.createEvent("MouseEvent");
+      mouseEvent.initMouseEvent(mouseEv, true, true, window, 1, theTouch.screenX, theTouch.screenY, theTouch.clientX, theTouch.clientY, false, false, false, false, 0, null);
+      theTouch.target.dispatchEvent(mouseEvent);
+      e.preventDefault();
     }
 
     // draw empty sliders
@@ -164,20 +195,16 @@ class Slider {
 const options = {
   container: 'container',
   sliders: [
-    {radius: 50, color: 'red'},
-    {radius: 150, color: 'red'},
-    {radius: 80, color: 'green'},
-    {radius: 110, color: 'blue'}]
+    {radius: 50, color: 'red', max: 500, min: 0, step: 1},
+    {radius: 150, color: 'red', max: 405, min: 100, step: 2},
+    {radius: 80, color: 'green', max: 600, min: 105, step: 0.5},
+    {radius: 110, color: 'blue', max: 660, min: 50, step: 10}]
 };
 
-// initialize slider object with options defined above
+// initialize slider object with options object
 const slider = new Slider(options);
 
 
-// options:
-//   container
-//   color
-//   max
-//   min
-//   step
-//   radius
+
+
+//
