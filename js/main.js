@@ -44,46 +44,76 @@ class Slider {
     const cw = ctx.canvas.width;
     const ch = ctx.canvas.height;
     const pi = Math.PI;
-    const r = 10; // radius of handles
-    let diff; // path from slider top to handle in radians
     // sliders center position
-    let center = (canvas.width > canvas.height) ? {x: cw*2/3, y: ch/2} : {x: cw/2, y: ch*2/3};
+    const center = (canvas.width > canvas.height) ? {x: cw*2/3, y: ch/2} : {x: cw/2, y: ch*2/3};
 
-    // draw sliders
-    function drawSliders() {
-      ctx.lineWidth = 15;
-      ctx.strokeStyle = '#eee';
-      for (let i = 0; i < options.sliders.length; i++) {
-        ctx.beginPath();
-        ctx.arc(center.x, center.y, options.sliders[i].radius, 0, 2*pi, false);
-        ctx.stroke();
+    // make array of sliders
+    const sliders = [];
+    for (let i = 0; i < options.sliders.length; i++) {
+      sliders.push({
+        r: options.sliders[i].radius,
+        x: center.x,
+        y: center.y - options.sliders[i].radius,
+        color: options.sliders[i].color,
+        max: options.sliders[i].max,
+        min: options.sliders[i].min,
+        step: options.sliders[i].step
+      });
+    }
+
+    // get user value from radians
+    function getValue(diff, max, min) {
+      if (diff + pi/2 < 0) {
+        return (2.5*pi + diff) * (max-min) / 20*pi + min;
+      } else {
+        return (diff + pi/2) * (max-min) / 20*pi + min;
       }
     }
 
-    // make array of handles
-    const handles = [];
-    for (let i = 0; i < options.sliders.length; i++) {
-      handles.push({r: options.sliders[i].radius, x: center.x, y: center.y - options.sliders[i].radius, color: options.sliders[i].color});
-    }
+    const r = 5;  // handle radius
+    let diff;  // distance from slider top to handle in radians
+    let value;  // slider value in user units
+    let max;  // user defined max value
+    let fontSize;  // data font size
+    let bigDash;  // dashes on slider
+    let smallDash; // transparent dashes on slider
+    // data position
+    const dataPosition = (canvas.width > canvas.height) ? {x: cw*0.2, y: ch/3} : {x: cw/4, y: ch*0.1};
 
-    // draw handles & colored paths
-    function drawHandles() {
-      handles.forEach(function(handle) {
-        // draw paths
-        diff = Math.atan2(handle.y - center.y + 0.00001, handle.x - center.x + 0.00001);
+    // draw sliders, handles & colored paths
+    function drawsliders() {
+      sliders.forEach(function(slider, index) {
+        // draw sliders backgrounds
+        bigDash = ((pi*2*slider.r/(slider.max - slider.min)) * 1.0001) - 2;
+        smallDash = 2;
+        ctx.setLineDash([bigDash, smallDash]);
+        ctx.lineWidth = 15;
+        ctx.strokeStyle = '#aaa';
         ctx.beginPath();
-        ctx.arc(center.x, center.y, handle.r, 1.5*pi, diff, false);
-        ctx.lineWidth = 10;
-        ctx.strokeStyle = handle.color;
+        ctx.arc(center.x, center.y, slider.r, -.5*pi, 1.5*pi, false);
+        ctx.stroke();
+        // draw paths
+        diff = Math.atan2(slider.y - center.y, slider.x - center.x);
+        ctx.beginPath();
+        ctx.arc(center.x, center.y, slider.r, 1.5*pi, diff + 0.00001, false);
+        ctx.lineWidth = 15;
+        ctx.strokeStyle = slider.color;
         ctx.stroke();
         // draw handles
         ctx.beginPath();
-        ctx.arc(handle.x, handle.y, r, 0, 2*pi, false);
+        ctx.arc(slider.x, slider.y, r, 0, 2*pi, false);
         ctx.fillStyle = "#eeefef";
         ctx.fill();
         ctx.lineWidth = 1;
         ctx.strokeStyle = '#cfcfcf';
         ctx.stroke();
+        // draw data
+        value = Math.floor(getValue(diff, slider.max, slider.min) * 1.013);
+        fontSize = cw * 0.03;
+        ctx.font = fontSize + "px Arial";
+        ctx.fillStyle = "red";
+        ctx.textAlign = 'left';
+        ctx.fillText('$' + value, dataPosition.x, dataPosition.y + index*cw/20);
       });
     }
 
@@ -99,8 +129,8 @@ class Slider {
         console.log('mouseup!');
       });
 
-      function redrawHandles(z) {
-        handles.forEach(function(handle) {
+      function redrawsliders(z) {
+        sliders.forEach(function(handle) {
           // check if slider was clicked
           if (z < handle.r + 10 && z > handle.r - 10 && mouseDown) {
             // get mouse coordinates inside canvas
@@ -112,15 +142,13 @@ class Slider {
             // get absolute distance from slider center to mouse
             z1 = (x**2 + y**2)**0.5;
             console.log('z1:' + z1);
-            // draw handles
+            // adjust handle position
             handle.x = handle.r/z1 * x + center.x;
             handle.y = handle.r/z1 * y + center.y;
             // clear canvas
             ctx.clearRect(0, 0, cw, ch);
-            // draw empty sliders
-            drawSliders();
-            // draw all handles
-            drawHandles();
+            // draw  sliders
+            drawsliders();
           }
         });
       }
@@ -139,16 +167,16 @@ class Slider {
         z = (x**2 + y**2)**0.5;
         console.log('z:' + z);
 
-        redrawHandles(z);
+        redrawsliders(z);
 
         if (mouseDown) {
           // drag handle on mouse down
           ctx.canvas.addEventListener("mousemove", function() {
-            redrawHandles(z);
+            redrawsliders(z);
           });
         } else {
           ctx.canvas.removeEventListener("mousemove", function() {
-            redrawHandles(z);
+            redrawsliders(z);
           });
         }
       });
@@ -174,20 +202,11 @@ class Slider {
       e.preventDefault();
     }
 
-    // draw empty sliders
-    drawSliders();
-    // draw handles
-    drawHandles();
+    // draw sliders
+    drawsliders();
     // listen for user input and adjust handles
     moveHandle();
   }
-
-  // // draw values on the left
-  // const value = 50;  // to be added
-  // ctx.textAlign = 'left';
-  // const fontSize = cw * 0.05 + 'px';
-  // ctx.font="fontSize Arial";
-  // ctx.fillText('$'+value, cw/5, ch*0.4);
 
 };
 
@@ -195,10 +214,8 @@ class Slider {
 const options = {
   container: 'container',
   sliders: [
-    {radius: 50, color: 'red', max: 500, min: 0, step: 1},
-    {radius: 150, color: 'red', max: 405, min: 100, step: 2},
-    {radius: 80, color: 'green', max: 600, min: 105, step: 0.5},
-    {radius: 110, color: 'blue', max: 660, min: 50, step: 10}]
+    {radius: 100, color: 'teal', max: 20, min: 5, step: 1},
+    {radius: 150, color: 'red', max: 20, min: 10, step: 2}]
 };
 
 // initialize slider object with options object
