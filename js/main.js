@@ -15,21 +15,22 @@ class Slider {
     let contH = container.getBoundingClientRect().height;
     const canvas = document.createElement('canvas');
     canvas.id = 'canvas';
-    // layout - vertical / horizontal
-    if (contW > contH) {
+    // canvas sizing
+    if (contH / contW < 0.65) {
       canvas.height = contH * .95;
-      canvas.width = canvas.height * 1.5;
+      canvas.width = canvas.height / 0.65;
     }
     else {
       canvas.width = contW * .95;
-      canvas.height = canvas.width * 1.5;
+      canvas.height = canvas.width * 0.65;
     }
-    // canvas styles
+    // styles
     canvas.style.position = 'relative';
     canvas.style.top = '50%';
     canvas.style.left = '50%';
     canvas.style.transform = 'translate(-50%, -50%)';
     canvas.style.border = '1px dashed grey';
+    canvas.style.touchAction = 'none';
     // create canvas in DOM
     container.appendChild(canvas);
     // get ctx
@@ -44,14 +45,11 @@ class Slider {
     const cw = ctx.canvas.width;
     const ch = ctx.canvas.height;
     const pi = Math.PI;
-    const r = 12;  // handle radius
-    const fontSize = (canvas.width > canvas.height) ? cw * 0.07 : ch * 0.07;
-    ctx.font = 'bold ' + fontSize + 'px Calibri';
-    ctx.textAlign = 'left';
+    const r = 13;  // handle radius
     // sliders center position
-    const center = (canvas.width > canvas.height) ? {x: cw*2/3, y: ch/2} : {x: cw/2, y: ch*2/3};
+    const center = {x: cw*0.67, y: ch*0.46};
     // data position
-    const dataPosition = (canvas.width > canvas.height) ? {x: cw*0.03, y: ch*0.33} : {x: cw*0.03, y: ch*0.07};
+    const dataPosition = {x: cw*0.02, y: ch*0.33};
 
     // make array of sliders
     const sliders = [];
@@ -78,17 +76,29 @@ class Slider {
       const min = sliders[i].min;
       const step = sliders[i].step;
       const remainder = (max - min) % step;
-      slider.dash = 2*pi*r * (step / (max - min)) - 2;
+      slider.dash = 2*pi*r * (step / (max - min)) - 1;
     }
 
-    // draw sliders, handles & colored paths
-    let dash;
+    // draw sliders, data and instruction
+    let dash, fontSize, instruction;
     function drawsliders() {
+
+      // draw instructions under slider
+      ctx.save();
+      fontSize = cw * 0.03;
+      instruction = 'ADJUST DIAL TO ENTER EXPENSES';
+      ctx.font = '900 italic ' + fontSize + 'px Calibri';
+      ctx.fillStyle = "#111";
+      ctx.textAlign = 'center';
+      ctx.fillText(instruction, center.x, ch * 0.97);
+      ctx.restore();
+
+      // draw sliders
       sliders.forEach(function(slider, index) {
         // draw sliders backgrounds
         ctx.save();
         ctx.lineWidth = 20;
-        ctx.setLineDash([slider.dash, 2]);
+        ctx.setLineDash([slider.dash, 1]);
         ctx.strokeStyle = '#ddd';
         ctx.beginPath();
         ctx.arc(center.x, center.y, slider.r, -.5*pi, 1.5*pi, false);
@@ -99,7 +109,7 @@ class Slider {
         // background path
         ctx.save();
         ctx.lineWidth = 20;
-        ctx.globalAlpha = 0.7;
+        ctx.globalAlpha = 0.6;
         ctx.beginPath();
         ctx.arc(center.x, center.y, slider.r, -.5*pi, slider.diff, false);
         ctx.strokeStyle = slider.color;
@@ -108,7 +118,7 @@ class Slider {
         // colored path
         ctx.save();
         ctx.lineWidth = 20;
-        ctx.setLineDash([slider.dash, 2]);
+        ctx.setLineDash([slider.dash, 1]);
         ctx.globalAlpha = 1;
         ctx.beginPath();
         ctx.arc(center.x, center.y, slider.r, -.5*pi, slider.diff, false);
@@ -130,8 +140,19 @@ class Slider {
 
         // draw data
         ctx.save();
+        fontSize = cw * 0.07;
+        ctx.font = 'bold ' + fontSize + 'px Calibri';
         ctx.fillStyle = "#111";
-        ctx.fillText('$' + slider.value, dataPosition.x, dataPosition.y + index*fontSize*0.9);
+        ctx.textAlign = 'left';
+        ctx.fillText('$' + slider.value, dataPosition.x, dataPosition.y + index* cw * 0.07);
+        ctx.restore();
+        // menu
+        ctx.save();
+        fontSize = cw * 0.03;
+        ctx.font = '400 ' + fontSize + 'px Calibri';
+        ctx.fillStyle = "#111";
+        ctx.textAlign = 'left';
+        ctx.fillText('Food', dataPosition.x * 10, dataPosition.y + index* cw * 0.07);
         ctx.restore();
       });
     }
@@ -205,8 +226,8 @@ class Slider {
       let mouseX, mouseY, x, y, z1, xh, yh, diff, diffRound, value;
       // iterate sliders
       sliders.forEach(function(slider) {
-        // check if z is equal to slider radius +/- 10 px
-        if (z < slider.r + 10 && z > slider.r - 10) {
+        // check if z is equal to slider radius +15/-12 px
+        if (z < slider.r + 15 && z > slider.r - 12) {
           // get mouse coordinates inside canvas
           mouseX = event.clientX - canvas.getBoundingClientRect().left;
           mouseY = event.clientY - canvas.getBoundingClientRect().top;
@@ -299,11 +320,11 @@ class Slider {
 const options = {
   container: 'container',
   sliders: [
-    {radius: 40, color: 'red', max: 10, min: 0, step: 2},
-    {radius: 70, color: '#f3771c', max: 100, min: 50, step: 5},
+    {radius: 40, color: 'red', max: 100, min: 0, step: 2},
+    {radius: 70, color: '#f3771c', max: 100, min: 0, step: 2},
     {radius: 100, color: '#009b19', max: 100, min: 0, step: 2},
     {radius: 130, color: '#0080bb', max: 860, min: 152, step: 2},
-    {radius: 160, color: '#6a427c', max: 10, min: 1, step: 4}
+    {radius: 160, color: '#6a427c', max: 100, min: 0, step: 2}
   ]
 };
 

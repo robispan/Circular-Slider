@@ -1,10 +1,13 @@
+.container {
+  /* height: 1500px; */
+  width: 90%;
+  margin: auto;
+  border: 1px dashed purple;
+}
+
 #container {
-  width: 700px;
-  height: 400px;
-  /* border: 1px dashed red; */
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  -ms-transform: translate(-50%, -50%);
+  width: 90%;
+  height: 500px;
+  border: 1px dashed red;
+  margin: auto;
 }
