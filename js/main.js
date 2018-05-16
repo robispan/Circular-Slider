@@ -61,8 +61,8 @@ class Slider {
         color: options.sliders[i].color,
         max: options.sliders[i].max,
         min: options.sliders[i].min,
-        step: options.sliders[i].step,
         value: options.sliders[i].min,
+        step: options.sliders[i].step,
         // default position of handles
         diff: -0.5*pi,
         x: center.x,
@@ -70,21 +70,25 @@ class Slider {
       });
     }
 
-    // calculate dash size
-    function getDash(diff, r) {
-      
+    // add dash property to sliders
+    for (let i = 0; i < options.sliders.length; i++) {
+      const slider = sliders[i];
+      const r = sliders[i].r;
+      const max = sliders[i].max;
+      const min = sliders[i].min;
+      const step = sliders[i].step;
+      const remainder = (max - min) % step;
+      slider.dash = 2*pi*r * (step / (max - min)) - 2;
     }
 
     // draw sliders, handles & colored paths
+    let dash;
     function drawsliders() {
       sliders.forEach(function(slider, index) {
-
         // draw sliders backgrounds
-        // bigDash = slider.step * ((pi*2*slider.r/(slider.max - slider.min)) * 1.0001) - 2;  // correction for factor 1.0001
-        // smallDash = 2;
         ctx.save();
         ctx.lineWidth = 20;
-        ctx.setLineDash([6, 1]);
+        ctx.setLineDash([slider.dash, 2]);
         ctx.strokeStyle = '#ddd';
         ctx.beginPath();
         ctx.arc(center.x, center.y, slider.r, -.5*pi, 1.5*pi, false);
@@ -104,7 +108,7 @@ class Slider {
         // colored path
         ctx.save();
         ctx.lineWidth = 20;
-        ctx.setLineDash([6, 1]);
+        ctx.setLineDash([slider.dash, 2]);
         ctx.globalAlpha = 1;
         ctx.beginPath();
         ctx.arc(center.x, center.y, slider.r, -.5*pi, slider.diff, false);
@@ -296,9 +300,9 @@ const options = {
   container: 'container',
   sliders: [
     {radius: 40, color: 'red', max: 10, min: 0, step: 2},
-    {radius: 70, color: '#f3771c', max: 100, min: 50, step: 3},
-    {radius: 100, color: '#009b19', max: 100, min: 0, step: 3},
-    {radius: 130, color: '#0080bb', max: 100, min: 1, step: 2},
+    {radius: 70, color: '#f3771c', max: 100, min: 50, step: 5},
+    {radius: 100, color: '#009b19', max: 100, min: 0, step: 2},
+    {radius: 130, color: '#0080bb', max: 860, min: 152, step: 2},
     {radius: 160, color: '#6a427c', max: 10, min: 1, step: 4}
   ]
 };
