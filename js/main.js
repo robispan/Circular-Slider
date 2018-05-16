@@ -201,7 +201,7 @@ class Slider {
 
     // iterate through sliders. if mouse was on the slider when clicked, edit its
     // properties (distance of path, handle position) and redraw sliders.
-    function redrawsliders(z) {
+    function redrawsliders(z, event) {
       let mouseX, mouseY, x, y, z1, xh, yh, diff, diffRound, value;
       // iterate sliders
       sliders.forEach(function(slider) {
@@ -239,7 +239,7 @@ class Slider {
 
     // mousedown function
     let z; // declare z
-    function onMouseDown() {
+    function onMouseDown(event) {
       let mouseX, mouseY, x, y;
       // get mouse coordinates inside canvas
       mouseX = event.clientX - canvas.getBoundingClientRect().left;
@@ -250,15 +250,15 @@ class Slider {
       // absolute distance from slider center to mouse
       z = (x**2 + y**2)**0.5;
       // pass mousedown coordinates to redrawsliders()
-      redrawsliders(z);
+      redrawsliders(z, event);
       // start listening to mousemove
       ctx.canvas.addEventListener('mousemove', onMouseMove);
     }
 
     // mousemove function
-    function onMouseMove() {
+    function onMouseMove(event) {
       // redraw sliders on mousemove
-      redrawsliders(z);
+      redrawsliders(z, event);
     }
 
     // mouseup function
