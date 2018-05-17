@@ -1,6 +1,4 @@
 #container {
-  width: 90%;
-  height: 800px;
+  height: 500px;
   border: 1px dashed red;
-  margin: auto;
 }

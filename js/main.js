@@ -4,7 +4,8 @@ class Slider {
       this._options = options;
       this.ctx;
       this.sliders = [];
-      // create canvas and objects
+      this.ratio;  // declare devicePixelRatio
+      // run methods to create canvas and sliders
       this.createCanvas();
       this.createSliders();
       this.drawObjects();
@@ -26,30 +27,49 @@ class Slider {
     const container = document.getElementById(this._options.container);
     let contW = container.getBoundingClientRect().width;
     let contH = container.getBoundingClientRect().height;
+    this.ratio = window.devicePixelRatio;
+    console.log('ratio:' + this.ratio);
     const canvas = document.createElement('canvas');
     canvas.id = 'canvas';
+
     // canvas sizing
+    var h, w;  // css pixels height/width
     if (contH / contW < 0.65) {
-      canvas.height = contH * .95;
-      canvas.width = canvas.height / 0.65;
+      h = Math.round(contH * .95);
+      w = Math.round(h / 0.65);
     }
     else {
-      canvas.width = contW * .95;
-      canvas.height = canvas.width * 0.65;
+      w = Math.round(contW * .95);
+      h = Math.round(w * 0.65);
     }
-    // styles
+
+    if (this.ratio !== 1) {
+      canvas.style.width = w + 'px';
+      canvas.style.height = h + 'px';
+    }
+
+    console.log('canvas.style.height' + canvas.style.height)
+    console.log('canvas.style.width' + canvas.style.width)
+
+    // canvas styles
+    canvas.width = w * this.ratio;
+    canvas.height = h * this.ratio;
+    console.log('canvas.height' + canvas.height)
+    console.log('canvas.width' + canvas.width)
     canvas.style.position = 'relative';
     canvas.style.top = '50%';
     canvas.style.left = '50%';
     canvas.style.transform = 'translate(-50%, -50%)';
     canvas.style.border = '1px dashed grey';
     canvas.style.touchAction = 'none';
+
     // create canvas in DOM
     container.appendChild(canvas);
     // get ctx
     this.ctx = canvas.getContext('2d');
-  }  // createCanvas() end
+  }  // createCanvas end
 
+  // make array of sliders
   createSliders() {
     // global variables
     const options = this._options;
@@ -87,9 +107,9 @@ class Slider {
       const remainder = (max - min) % step;
       slider.dash = 2*pi*r * (step / (max - min)) - 1;
     }
-  }
+  }  // createSliders end
 
-  // edit sliders' radius on resize
+  // edit sliders radius on resize
   editSliderOnResize() {
     let r, slider;
     const cw = this.ctx.canvas.width;
@@ -111,7 +131,6 @@ class Slider {
 
   // draw sliders, handles & data fields, move sliders on input
   drawObjects() {
-
     // global variables
     const options = this._options;
     const ctx = this.ctx;
@@ -119,6 +138,7 @@ class Slider {
     const ch = ctx.canvas.height;
     const pi = Math.PI;
     const r = cw * 0.017;  // handle radius
+    const ratio = this.ratio;  // devicePixelRatio
     // sliders center position
     const center = {x: cw*0.67, y: ch*0.46};
     // data position
@@ -142,7 +162,7 @@ class Slider {
       sliders.forEach(function(slider, index) {
         // draw sliders backgrounds (full grey circles)
         ctx.save();
-        ctx.lineWidth = cw * 0.03;
+        ctx.lineWidth = cw * 0.035;
         ctx.setLineDash([slider.dash, 1]);
         ctx.strokeStyle = '#ddd';
         ctx.beginPath();
@@ -152,7 +172,7 @@ class Slider {
 
         // draw colored paths
         ctx.save();
-        ctx.lineWidth = cw * 0.03;
+        ctx.lineWidth = cw * 0.035;
         ctx.setLineDash([slider.dash, 1]);
         ctx.globalAlpha = 1;
         ctx.beginPath();
@@ -190,7 +210,7 @@ class Slider {
         ctx.fillText('Food', dataPosition.x * 10, dataPosition.y + index* cw * 0.07);
         ctx.restore();
       });
-    }  // drawsliders() end
+    }  // drawsliders end
 
     // draw default sliders on load
     drawsliders();
@@ -263,13 +283,14 @@ class Slider {
       // iterate sliders
       sliders.forEach(function(slider) {
         // check if z is equal to slider radius +15/-12 px
-        if (z < slider.r + cw*0.03 && z > slider.r - cw*0.02) {
+        if (z < slider.r + cw*0.025 && z > slider.r - cw*0.025) {
           // get mouse coordinates inside canvas
           mouseX = event.clientX - canvas.getBoundingClientRect().left;
           mouseY = event.clientY - canvas.getBoundingClientRect().top;
           // get x & y distance from slider center to mouse
-          x = mouseX - center.x;
-          y = mouseY - center.y;
+          // multiply by device pixel ratio to get canvas pixels
+          x = mouseX * ratio - center.x;
+          y = mouseY * ratio - center.y;
           // get distance from slider center to mouse
           z1 = (x**2 + y**2)**0.5;
           // get handle coordinates
@@ -292,20 +313,29 @@ class Slider {
           drawsliders(z);
         }
       });
-    }
+    }  // redrawsliders end
 
     // mousedown function
     let z; // declare z
     function onMouseDown(event) {
       let mouseX, mouseY, x, y;
+
+      console.log('')
+      console.log('ratio: ' + ratio)
       // get mouse coordinates inside canvas
       mouseX = event.clientX - canvas.getBoundingClientRect().left;
       mouseY = event.clientY - canvas.getBoundingClientRect().top;
+      console.log('mouse coordinates inside canvas: ' + mouseX, mouseY)
       // x & y distance from slider center to mouse
-      x = mouseX - center.x;
-      y = mouseY - center.y;
+      x = mouseX * ratio - center.x;
+      y = mouseY * ratio - center.y;
+      console.log('center.x, center.y: ' + center.x, center.y)
+      console.log('x & y distance from slider center to mouse: ' + x, y)
       // absolute distance from slider center to mouse
-      z = (x**2 + y**2)**0.5;
+      z = ((x**2 + y**2)**0.5);
+      console.log('absolute distance from slider center to mouse: ' + z)
+      console.log('')
+
       // pass mousedown coordinates to redrawsliders()
       redrawsliders(z, event);
       // start listening to mousemove
@@ -351,11 +381,13 @@ class Slider {
     }
 
 
-  }  // drawObjects() end
+  }  // drawObjects end
 
 }; // Slider class end
 
-// enter options
+
+
+// options
 const options = {
   container: 'container',
   sliders: [
@@ -367,12 +399,8 @@ const options = {
   ]
 };
 
-// initialize slider object with options object
+// initialize slider with options
 const slider = new Slider(options);
-
-
-
-
 
 
 //
