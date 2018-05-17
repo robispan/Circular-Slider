@@ -3,9 +3,22 @@ class Slider {
   constructor(options) {
       this._options = options;
       this.ctx;
-      // call methods to create canvas and sliders
+      this.sliders = [];
+      // create canvas and objects
       this.createCanvas();
+      this.createSliders();
       this.drawObjects();
+
+      // listen to resize
+      window.addEventListener('resize', this.onResize.bind(this));
+  }
+
+  // onresize function
+  onResize() {
+    canvas.parentNode.removeChild(canvas);
+    this.createCanvas();
+    this.editSliderOnResize();
+    this.drawObjects();
   }
 
   // create canvas and append it to DOM container defined in options parameter
@@ -35,27 +48,23 @@ class Slider {
     container.appendChild(canvas);
     // get ctx
     this.ctx = canvas.getContext('2d');
-  }
+  }  // createCanvas() end
 
-  // draw sliders, handles & data fields, move sliders
-  drawObjects() {
+  createSliders() {
     // global variables
     const options = this._options;
     const ctx = this.ctx;
     const cw = ctx.canvas.width;
     const ch = ctx.canvas.height;
     const pi = Math.PI;
-    const r = 13;  // handle radius
     // sliders center position
     const center = {x: cw*0.67, y: ch*0.46};
-    // data position
-    const dataPosition = {x: cw*0.02, y: ch*0.33};
+    const sliders = this.sliders;
 
     // make array of sliders
-    const sliders = [];
     for (let i = 0; i < options.sliders.length; i++) {
       sliders.push({
-        r: options.sliders[i].radius,
+        r: options.sliders[i].radius * cw * 0.05,
         color: options.sliders[i].color,
         max: options.sliders[i].max,
         min: options.sliders[i].min,
@@ -64,11 +73,11 @@ class Slider {
         // default position of handles
         diff: -0.5*pi,
         x: center.x,
-        y: center.y - options.sliders[i].radius
+        y: center.y - options.sliders[i].radius * cw * 0.05
       });
     }
 
-    // add dash property to sliders
+    // add dashes to sliders
     for (let i = 0; i < options.sliders.length; i++) {
       const slider = sliders[i];
       const r = sliders[i].r;
@@ -78,8 +87,45 @@ class Slider {
       const remainder = (max - min) % step;
       slider.dash = 2*pi*r * (step / (max - min)) - 1;
     }
+  }
 
-    // draw sliders, data and instruction
+  // edit sliders' radius on resize
+  editSliderOnResize() {
+    let r, slider;
+    const cw = this.ctx.canvas.width;
+    const ch = this.ctx.canvas.height;
+    // sliders center position
+    const center = {x: cw*0.67, y: ch*0.46};
+    for (let i = 0; i < options.sliders.length; i++) {
+      slider = this.sliders[i];
+      r = options.sliders[i].radius * cw * 0.05;
+      // edit radius
+      slider.r = r;
+      // edit dash
+      slider.dash = 2*Math.PI*r * (slider.step / (slider.max - slider.min)) - 1;
+      // edit handle coordinates
+      slider.x = Math.cos(slider.diff) * r + center.x;
+      slider.y = Math.sin(slider.diff) * r + center.y;
+    };
+  }
+
+  // draw sliders, handles & data fields, move sliders on input
+  drawObjects() {
+
+    // global variables
+    const options = this._options;
+    const ctx = this.ctx;
+    const cw = ctx.canvas.width;
+    const ch = ctx.canvas.height;
+    const pi = Math.PI;
+    const r = cw * 0.017;  // handle radius
+    // sliders center position
+    const center = {x: cw*0.67, y: ch*0.46};
+    // data position
+    const dataPosition = {x: cw*0.02, y: ch*0.33};
+    const sliders = this.sliders;
+
+    // draw sliders, data and instructions
     let dash, fontSize, instruction;
     function drawsliders() {
 
@@ -95,9 +141,9 @@ class Slider {
 
       // draw sliders
       sliders.forEach(function(slider, index) {
-        // draw sliders backgrounds
+        // draw sliders backgrounds (full grey circles)
         ctx.save();
-        ctx.lineWidth = 20;
+        ctx.lineWidth = cw * 0.03;
         ctx.setLineDash([slider.dash, 1]);
         ctx.strokeStyle = '#ddd';
         ctx.beginPath();
@@ -105,19 +151,9 @@ class Slider {
         ctx.stroke();
         ctx.restore();
 
-        // draw paths
-        // background path
+        // draw colored paths
         ctx.save();
-        ctx.lineWidth = 20;
-        ctx.globalAlpha = 0.6;
-        ctx.beginPath();
-        ctx.arc(center.x, center.y, slider.r, -.5*pi, slider.diff, false);
-        ctx.strokeStyle = slider.color;
-        ctx.stroke();
-        ctx.restore();
-        // colored path
-        ctx.save();
-        ctx.lineWidth = 20;
+        ctx.lineWidth = cw * 0.03;
         ctx.setLineDash([slider.dash, 1]);
         ctx.globalAlpha = 1;
         ctx.beginPath();
@@ -155,8 +191,9 @@ class Slider {
         ctx.fillText('Food', dataPosition.x * 10, dataPosition.y + index* cw * 0.07);
         ctx.restore();
       });
-    }
-    // draw sliders with default positions
+    }  // drawsliders() end
+
+    // draw default sliders on load
     drawsliders();
 
     // round angle to nearest step
@@ -288,11 +325,11 @@ class Slider {
       ctx.canvas.removeEventListener('mousemove', onMouseMove);
     }
 
+
     // listen to mouse down
     ctx.canvas.addEventListener('mousedown', onMouseDown);
     // listen to mouse up
     ctx.canvas.addEventListener('mouseup', onMouseUp);
-
 
 
     // Add touch screen support
@@ -313,18 +350,21 @@ class Slider {
       theTouch.target.dispatchEvent(mouseEvent);
       e.preventDefault();
     }
-  }
-};
+
+
+  }  // drawObjects() end
+
+}; // Slider class end
 
 // enter options
 const options = {
   container: 'container',
   sliders: [
-    {radius: 40, color: 'red', max: 100, min: 0, step: 2},
-    {radius: 70, color: '#f3771c', max: 100, min: 0, step: 2},
-    {radius: 100, color: '#009b19', max: 100, min: 0, step: 2},
-    {radius: 130, color: '#0080bb', max: 860, min: 152, step: 2},
-    {radius: 160, color: '#6a427c', max: 100, min: 0, step: 2}
+    {radius: 1, color: 'red', max: 100, min: 0, step: 2},
+    {radius: 2, color: '#f3771c', max: 100, min: 0, step: 2},
+    {radius: 3, color: '#009b19', max: 100, min: 0, step: 2},
+    {radius: 4, color: '#0080bb', max: 860, min: 152, step: 2},
+    {radius: 5, color: '#6a427c', max: 100, min: 0, step: 2}
   ]
 };
 
