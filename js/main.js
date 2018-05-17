@@ -128,6 +128,7 @@ class Slider {
     // draw sliders, data and instructions
     let dash, fontSize, instruction;
     function drawsliders() {
+
       // draw instructions under slider
       ctx.save();
       fontSize = cw * 0.03;
@@ -263,7 +264,7 @@ class Slider {
       // iterate sliders
       sliders.forEach(function(slider) {
         // check if z is equal to slider radius +15/-12 px
-        if (z < slider.r + slider.r*0.15 && z > slider.r - slider.r*0.12) {
+        if (z < slider.r + 15 && z > slider.r - 12) {
           // get mouse coordinates inside canvas
           mouseX = event.clientX - canvas.getBoundingClientRect().left;
           mouseY = event.clientY - canvas.getBoundingClientRect().top;

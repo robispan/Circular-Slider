@@ -1,6 +1,13 @@
+.container {
+  /* height: 1500px; */
+  width: 90%;
+  margin: auto;
+  border: 1px dashed purple;
+}
+
 #container {
   width: 90%;
-  height: 800px;
+  height: 500px;
   border: 1px dashed red;
   margin: auto;
 }
