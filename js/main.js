@@ -1,20 +1,31 @@
 
+// +++++++++++++++++++++++++++++++++++ CLASS START +++++++++++++++++++++++++++++++++++
+
 class Slider {
+
+
+  // +++++++++++++++++++++++++++++++++++ CONSTRUCTOR METHOD +++++++++++++++++++++++++++++++++++
+
+
   constructor(options) {
       this._options = options;
-      this.ctx;
-      this.sliders = [];
+      this.ctx;  // declare canvas context
+      this.sliders = [];  // declare sliders array
       this.ratio;  // declare devicePixelRatio
-      // run methods to create canvas and sliders
+
+      // run methods to draw canvas and sliders
       this.createCanvas();
       this.createSliders();
       this.drawObjects();
 
-      // listen to resize
+      // recreate canvas and edit sliders on resize
       window.addEventListener('resize', this.onResize.bind(this));
   }
 
-  // onresize function
+
+  // +++++++++++++++++++++++++++++++++++ WINDOW RESIZE METHOD +++++++++++++++++++++++++++++++++++
+
+
   onResize() {
     canvas.parentNode.removeChild(canvas);
     this.createCanvas();
@@ -22,13 +33,15 @@ class Slider {
     this.drawObjects();
   }
 
-  // create canvas and append it to DOM container defined in options parameter
+
+  // +++++++++++++++++++++++++++++++++++ CREATE CANVAS +++++++++++++++++++++++++++++++++++
+
+
   createCanvas() {
     const container = document.getElementById(this._options.container);
     let contW = container.getBoundingClientRect().width;
     let contH = container.getBoundingClientRect().height;
     this.ratio = window.devicePixelRatio;
-    console.log('ratio:' + this.ratio);
     const canvas = document.createElement('canvas');
     canvas.id = 'canvas';
 
@@ -48,14 +61,9 @@ class Slider {
       canvas.style.height = h + 'px';
     }
 
-    console.log('canvas.style.height' + canvas.style.height)
-    console.log('canvas.style.width' + canvas.style.width)
-
     // canvas styles
     canvas.width = w * this.ratio;
     canvas.height = h * this.ratio;
-    console.log('canvas.height' + canvas.height)
-    console.log('canvas.width' + canvas.width)
     canvas.style.position = 'relative';
     canvas.style.top = '50%';
     canvas.style.left = '50%';
@@ -67,9 +75,12 @@ class Slider {
     container.appendChild(canvas);
     // get ctx
     this.ctx = canvas.getContext('2d');
-  }  // createCanvas end
+  }  // createCanvas - END
 
-  // make array of sliders
+
+  // +++++++++++++++++++++++++++++++++++ MAKE SLIDERS ARRAY +++++++++++++++++++++++++++++++++++
+
+
   createSliders() {
     // global variables
     const options = this._options;
@@ -107,15 +118,18 @@ class Slider {
       const remainder = (max - min) % step;
       slider.dash = 2*pi*r * (step / (max - min)) - 1;
     }
-  }  // createSliders end
+  }  // createSliders - END
 
-  // edit sliders radius on resize
+
+  // +++++++++++++++++++++++++++++++++++ EDIT SLIDERS ARRAY ON RESIZE +++++++++++++++++++++++++++++++++++
+
+
   editSliderOnResize() {
     let r, slider;
     const cw = this.ctx.canvas.width;
     const ch = this.ctx.canvas.height;
     // sliders center position
-    const center = {x: cw*0.67, y: ch*0.46};
+    const center = {x: cw * 0.67, y: ch * 0.46};
     for (let i = 0; i < options.sliders.length; i++) {
       slider = this.sliders[i];
       r = options.sliders[i].radius * cw * 0.05;
@@ -129,7 +143,10 @@ class Slider {
     };
   }
 
-  // draw sliders, handles & data fields, move sliders on input
+
+  // +++++++++++++++++++++++++++++++++++ DRAW & MOVE SLIDERS +++++++++++++++++++++++++++++++++++
+
+
   drawObjects() {
     // global variables
     const options = this._options;
@@ -145,7 +162,10 @@ class Slider {
     const dataPosition = {x: cw*0.02, y: ch*0.33};
     const sliders = this.sliders;
 
-    // draw sliders, data and instructions
+
+    // ----------------- DRAW SLIDERS, DATA & INSTRUCTIONS -----------------
+
+
     let dash, fontSize, instruction;
     function drawsliders() {
       // draw instructions under slider
@@ -211,14 +231,16 @@ class Slider {
         ctx.restore();
       });
     }  // drawsliders end
-
-    // draw default sliders on load
+    // draw sliders with default properties on load
     drawsliders();
+
+
+    // ----------------- HELPER FUNCTIONS -----------------
+
 
     // round angle to nearest step
     function roundAngle(angle, max, min, step) {
       let parts, diff, wholeSteps, remainder, remainderD, stepD;
-      console.log(angle)
       // convert diff to range from zero to 2PI clockwise starting from top position
       diff = (angle > -pi && angle < -pi/2) ? angle + 2.5*pi : angle + pi/2;
       // number of whole steps from min to max
@@ -227,24 +249,18 @@ class Slider {
       remainder = (max - min) % step;
       // remainder in radians
       remainderD = (remainder / (max - min)) * 2*pi;
-      console.log('remainderD:' + remainderD);
       // step in radians
       stepD = (step / (max-min)) * 2*pi;
-      console.log('stepD:' + stepD);
       // round diff to nearest step
       diff = Math.round(diff / stepD) * stepD;
-      console.log('round diff:' + diff);
       // convert diff back to original format (starting at right position)
       diff = (diff > pi && diff < 1.5*pi) ? diff - 2.5*pi : diff - pi/2;
-      console.log('converted diff:' + diff);
       // correction for max value to show (full circle):
       // if there is a remainder between last full step and max,
       // show full circle on last half of the remainder.
       if (remainderD && angle <= -0.5*pi && angle > -0.5*pi - remainderD/2) {
         diff = 1.5*pi;  // full circle
       }
-      console.log('max corr diff:' + diff);
-      console.log('');
       // return rounded and max-correcter diff
       return diff;
     }
@@ -266,7 +282,6 @@ class Slider {
       // if there is a remainder between last full step and max,
       // show max value if mouse is on last half of the remainder.
       if (remainder && value <= max && value > max - remainder/2) {
-        console.log('case1')
         value = max;
       }
       else {
@@ -276,77 +291,108 @@ class Slider {
       return value;
     }
 
-    // iterate through sliders. if mouse was on the slider when clicked, edit its
-    // properties (distance of path, handle position) and redraw sliders.
-    function redrawsliders(z, event) {
-      let mouseX, mouseY, x, y, z1, xh, yh, diff, diffRound, value;
-      // iterate sliders
-      sliders.forEach(function(slider) {
-        // check if z is equal to slider radius +15/-12 px
-        if (z < slider.r + cw*0.025 && z > slider.r - cw*0.025) {
-          // get mouse coordinates inside canvas
-          mouseX = event.clientX - canvas.getBoundingClientRect().left;
-          mouseY = event.clientY - canvas.getBoundingClientRect().top;
-          // get x & y distance from slider center to mouse
-          // multiply by device pixel ratio to get canvas pixels
-          x = mouseX * ratio - center.x;
-          y = mouseY * ratio - center.y;
-          // get distance from slider center to mouse
-          z1 = (x**2 + y**2)**0.5;
-          // get handle coordinates
-          xh = slider.r/z1 * x + center.x;
-          yh = slider.r/z1 * y + center.y;
-          // calculate angle between top position and handle
-          diff = Math.atan2(yh - center.y, xh - center.x);
-          // round angle to nearest step (snapping effect) and save it
-          diffRound = roundAngle(diff, slider.max, slider.min, slider.step);
-          // set new slider angle
-          slider.diff = diffRound;
-          // adjust handle position to rounded angle and save it to slider object
-          slider.x = Math.cos(diffRound) * slider.r + center.x;
-          slider.y = Math.sin(diffRound) * slider.r + center.y;
-          // get rounded value and save it to slider object
-          slider.value = getValue(diff, slider.max, slider.min, slider.step);
 
-          // redraw sliders with new positions
-          ctx.clearRect(0, 0, cw, ch);
-          drawsliders(z);
-        }
-      });
-    }  // redrawsliders end
+    // ----------------- MOVE SLIDERS -----------------
 
-    // mousedown function
-    let z; // declare z
-    function onMouseDown(event) {
-      let mouseX, mouseY, x, y;
 
-      console.log('')
-      console.log('ratio: ' + ratio)
+    // edit slider's properties and redraw sliders
+    function moveSlider(slider, event) {
+      let mouseX, mouseY, x, y, z, xh, yh, diff, diffRound;
       // get mouse coordinates inside canvas
       mouseX = event.clientX - canvas.getBoundingClientRect().left;
       mouseY = event.clientY - canvas.getBoundingClientRect().top;
-      console.log('mouse coordinates inside canvas: ' + mouseX, mouseY)
+      // get x & y distance from slider center to mouse
+      // multiply by device pixel ratio to get canvas pixels
+      x = mouseX * ratio - center.x;
+      y = mouseY * ratio - center.y;
+      // get distance from slider center to mouse
+      z = (x**2 + y**2)**0.5;
+      // get handle coordinates
+      xh = slider.r/z * x + center.x;
+      yh = slider.r/z * y + center.y;
+      // calculate angle between top position and handle
+      diff = Math.atan2(yh - center.y, xh - center.x);
+      // round angle to nearest step (snapping effect) and save it
+      diffRound = roundAngle(diff, slider.max, slider.min, slider.step);
+      // set new slider angle
+      slider.diff = diffRound;
+      // adjust handle position to rounded angle and save it to slider object
+      slider.x = Math.cos(diffRound) * slider.r + center.x;
+      slider.y = Math.sin(diffRound) * slider.r + center.y;
+      // get rounded value and save it to slider object
+      slider.value = getValue(diff, slider.max, slider.min, slider.step);
+
+      // redraw sliders with new positions
+      ctx.clearRect(0, 0, cw, ch);
+      drawsliders();
+    }
+
+
+    // ----------------- EVENT LISTENERS -----------------
+
+
+    // mousedown function
+    let pickedSlider;  // slider that is dragged
+    function onMouseDown(event) {
+      let mouseX, mouseY, x, y, z;
+      // get mouse coordinates inside canvas
+      mouseX = event.clientX - canvas.getBoundingClientRect().left;
+      mouseY = event.clientY - canvas.getBoundingClientRect().top;
       // x & y distance from slider center to mouse
       x = mouseX * ratio - center.x;
       y = mouseY * ratio - center.y;
-      console.log('center.x, center.y: ' + center.x, center.y)
-      console.log('x & y distance from slider center to mouse: ' + x, y)
       // absolute distance from slider center to mouse
       z = ((x**2 + y**2)**0.5);
-      console.log('absolute distance from slider center to mouse: ' + z)
-      console.log('')
 
-      // pass mousedown coordinates to redrawsliders()
-      redrawsliders(z, event);
-      // start listening to mousemove
+      // check if user clicked on one of the sliders
+      sliders.forEach(function(slider) {
+        if (z < slider.r + cw*0.025 && z > slider.r - cw*0.025) {
+          // change slider position on click
+          pickedSlider = slider;
+          moveSlider(slider, event);
+        }
+      });
+      // listen to mousemove
       ctx.canvas.addEventListener('mousemove', onMouseMove);
     }
 
+    // touchdown function
+    let touchedSlider;  // slider that is dragged
+    function onTouchDown(event) {
+      let mouseX, mouseY, x, y, z;
+      // get mouse coordinates inside canvas
+      mouseX = event.touches[0].clientX - canvas.getBoundingClientRect().left;
+      mouseY = event.touches[0].clientY - canvas.getBoundingClientRect().top;
+      // x & y distance from slider center to mouse
+      x = mouseX * ratio - center.x;
+      y = mouseY * ratio - center.y;
+      // absolute distance from slider center to mouse
+      z = ((x**2 + y**2)**0.5);
+
+      // check if user clicked on one of the sliders
+      sliders.forEach(function(slider) {
+        if (z < slider.r + cw*0.025 && z > slider.r - cw*0.025) {
+          // change slider position on click
+          touchedSlider = slider;
+          moveSlider(slider, event.touches[0]);
+        }
+      });
+      // listen to touchmove
+      ctx.canvas.addEventListener('touchmove', onTouchMove);
+    }
+
+
     // mousemove function
     function onMouseMove(event) {
-      // redraw sliders on mousemove
-      redrawsliders(z, event);
+      moveSlider(pickedSlider, event);
     }
+
+    // touchmove function
+    function onTouchMove(event) {
+      var touch = event.touches[0];
+      moveSlider(touchedSlider, touch);
+    }
+
 
     // mouseup function
     function onMouseUp() {
@@ -354,37 +400,26 @@ class Slider {
       ctx.canvas.removeEventListener('mousemove', onMouseMove);
     }
 
+    // touchup function
+    function onTouchUp() {
+      // stop listening to mousemove
+      ctx.canvas.removeEventListener('touchmove', onTouchMove);
+    }
 
     // listen to mouse down
+    ctx.canvas.addEventListener('touchstart', onTouchDown);
     ctx.canvas.addEventListener('mousedown', onMouseDown);
     // listen to mouse up
+    ctx.canvas.addEventListener('touchend', onTouchUp);
     ctx.canvas.addEventListener('mouseup', onMouseUp);
 
 
-    // Add touch screen support
-    document.addEventListener("touchstart", touch2Mouse, true);
-    document.addEventListener("touchmove", touch2Mouse, true);
-    document.addEventListener("touchend", touch2Mouse, true);
-    function touch2Mouse(e) {
-      var theTouch = e.changedTouches[0];
-      var mouseEv;
-      switch(e.type) {
-        case "touchstart": mouseEv="mousedown"; break;
-        case "touchend":   mouseEv="mouseup"; break;
-        case "touchmove":  mouseEv="mousemove"; break;
-        default: return;
-      }
-      var mouseEvent = document.createEvent("MouseEvent");
-      mouseEvent.initMouseEvent(mouseEv, true, true, window, 1, theTouch.screenX, theTouch.screenY, theTouch.clientX, theTouch.clientY, false, false, false, false, 0, null);
-      theTouch.target.dispatchEvent(mouseEvent);
-      e.preventDefault();
-    }
+  }  // drawObjects - END
+
+}; // Slider class - END
 
 
-  }  // drawObjects end
-
-}; // Slider class end
-
+// ++++++++++++++++++++++++++++++++++++++++ INSTANTIATE SLIDER CLASS ++++++++++++++++++++++++++++++++++++++++
 
 
 // options
@@ -399,7 +434,7 @@ const options = {
   ]
 };
 
-// initialize slider with options
+// initialize slider with options object
 const slider = new Slider(options);
 
 
