@@ -117,8 +117,7 @@ class Slider {
       const min = sliders[i].min;
       const step = sliders[i].step;
       const remainder = (max - min) % step;
-      slider.dashGap = 1*this.ratio;
-      slider.dash = 2*pi*r * (step / (max - min)) - slider.dashGap;
+      slider.dash = 2*pi*r * (step / (max - min)) - cw*0.0001;
     }
   }  // createSliders - END
 
@@ -139,8 +138,7 @@ class Slider {
       r = options.sliders[i].radius * cw * 0.045;
       slider.r = r;
       // edit dash
-      slider.dashGap = 1*this.ratio;
-      slider.dash = 2*Math.PI*r * (slider.step / (slider.max - slider.min)) - slider.dashGap;
+      slider.dash = 2*Math.PI*r * (slider.step / (slider.max - slider.min)) - cw*0.0001;
       // edit handle coordinates
       slider.x = Math.cos(slider.diff) * r + center.x;
       slider.y = Math.sin(slider.diff) * r + center.y;
@@ -188,7 +186,7 @@ class Slider {
         // draw sliders backgrounds (full grey circles)
         ctx.save();
         ctx.lineWidth = cw * 0.03;
-        ctx.setLineDash([slider.dash, slider.dashGap]);
+        ctx.setLineDash([slider.dash, cw*0.002]);
         ctx.strokeStyle = '#ddd';
         ctx.beginPath();
         ctx.arc(center.x, center.y, slider.r, -.5*pi, 1.5*pi, false);
@@ -198,7 +196,7 @@ class Slider {
         // draw colored paths
         ctx.save();
         ctx.lineWidth = cw * 0.03;
-        ctx.setLineDash([slider.dash, slider.dashGap]);
+        ctx.setLineDash([slider.dash, cw*0.002]);
         ctx.globalAlpha = 1;
         ctx.beginPath();
         ctx.arc(center.x, center.y, slider.r, -.5*pi, slider.diff, false);
