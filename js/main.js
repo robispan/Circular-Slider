@@ -47,13 +47,13 @@ class Slider {
 
     // canvas sizing
     var h, w;  // css pixels height/width
-    if (contH / contW < 0.55) {
+    if (contH / contW < 0.65) {
       h = Math.round(contH * .95);
-      w = Math.round(h / 0.55);
+      w = Math.round(h / 0.65);
     }
     else {
       w = Math.round(contW * .95);
-      h = Math.round(w * 0.55);
+      h = Math.round(w * 0.65);
     }
 
     if (this.ratio !== 1) {
@@ -68,7 +68,7 @@ class Slider {
     canvas.style.top = '50%';
     canvas.style.left = '50%';
     canvas.style.transform = 'translate(-50%, -50%)';
-    canvas.style.border = '1px dashed grey';
+    // canvas.style.border = '1px dashed grey';
     canvas.style.touchAction = 'none';
 
     // create canvas in DOM
@@ -96,7 +96,7 @@ class Slider {
     for (let i = 0; i < options.sliders.length; i++) {
       sliders.push({
         category: options.sliders[i].category,
-        r: options.sliders[i].radius * cw * 0.045,
+        r: options.sliders[i].radius * cw / 450,
         color: options.sliders[i].color,
         max: options.sliders[i].max,
         min: options.sliders[i].min,
@@ -105,7 +105,7 @@ class Slider {
         // default position of handles
         diff: -0.5*pi,
         x: center.x,
-        y: center.y - options.sliders[i].radius * cw * 0.045
+        y: center.y - options.sliders[i].radius * cw / 450
       });
     }
 
@@ -117,7 +117,7 @@ class Slider {
       const min = sliders[i].min;
       const step = sliders[i].step;
       const remainder = (max - min) % step;
-      slider.dash = 2*pi*r * (step / (max - min)) - cw*0.0001;
+      slider.dash = 2*pi*r * (step / (max - min)) - cw*0.003;
     }
   }  // createSliders - END
 
@@ -135,10 +135,10 @@ class Slider {
     for (let i = 0; i < options.sliders.length; i++) {
       slider = this.sliders[i];
       // edit radius
-      r = options.sliders[i].radius * cw * 0.045;
+      r = options.sliders[i].radius * cw / 450;
       slider.r = r;
       // edit dash
-      slider.dash = 2*Math.PI*r * (slider.step / (slider.max - slider.min)) - cw*0.0001;
+      slider.dash = 2*Math.PI*r * (slider.step / (slider.max - slider.min)) - cw*0.003;
       // edit handle coordinates
       slider.x = Math.cos(slider.diff) * r + center.x;
       slider.y = Math.sin(slider.diff) * r + center.y;
@@ -157,95 +157,171 @@ class Slider {
     const ctx = this.ctx;
     const cw = ctx.canvas.width;
     const ch = ctx.canvas.height;
-    const pi = Math.PI;
-    const r = cw * 0.018;  // handle radius
     const ratio = this.ratio;  // devicePixelRatio
+    const sliders = this.sliders;
+    const pi = Math.PI;
+    const r = cw * 0.019;  // handle radius
+    const fontColor = '#333';
+    const sliderWidth = cw * 0.032;
     // sliders center position
     const center = {x: cw*0.67, y: ch*0.46};
     // data position
     const dataPosition = {x: cw*0.02, y: ch*0.25};
-    const sliders = this.sliders;
 
 
-    // ----------------- DRAW SLIDERS, DATA & INSTRUCTIONS -----------------
+    // ----------------- DRAW OBJECTS -----------------
 
-    let dash, fontSize, instruction;
+    let dash, fontSize, instruction, color1, color2, gradient;
     function drawsliders() {
+
+      // draw background
+      ctx.save();
+      color1 = '#efeff0';
+      color2 = lightenDarkenColor(color1, -2);
+      gradient = ctx.createLinearGradient(ch/2, cw, ch/2, 0);
+      gradient.addColorStop(0, color2);
+      gradient.addColorStop(1, color1);
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, cw, ch);
+      ctx.restore();
+
       // draw instructions under slider
       ctx.save();
-      fontSize = cw * 0.03;
+      fontSize = cw * 0.02;
       instruction = 'ADJUST DIAL TO ENTER EXPENSES';
-      ctx.font = '900 italic ' + fontSize + 'px Calibri';
-      ctx.fillStyle = "#111";
+      ctx.font = '900 italic ' + fontSize + 'px Arial';
+      ctx.fillStyle = fontColor;
       ctx.textAlign = 'center';
       ctx.fillText(instruction, center.x, ch * 0.97);
       ctx.restore();
-
       // draw sliders
       sliders.forEach(function(slider, index) {
+
         // draw sliders backgrounds (full grey circles)
         ctx.save();
-        ctx.lineWidth = cw * 0.03;
-        ctx.setLineDash([slider.dash, cw*0.002]);
-        ctx.strokeStyle = '#ddd';
+        ctx.lineWidth = sliderWidth;
+        ctx.setLineDash([slider.dash, cw*0.003]);
+        color1 = '#d7d7d7';
+        color2 = lightenDarkenColor(color1, -1);
+        gradient = ctx.createLinearGradient(0, center.y-slider.r, 0, center.y+slider.r);
+        gradient.addColorStop(0, color1);
+        gradient.addColorStop(1, color2);
+        ctx.strokeStyle = gradient;
         ctx.beginPath();
         ctx.arc(center.x, center.y, slider.r, -.5*pi, 1.5*pi, false);
         ctx.stroke();
         ctx.restore();
 
-        // draw colored paths
+        // draw colored paths - background
         ctx.save();
-        ctx.lineWidth = cw * 0.03;
-        ctx.setLineDash([slider.dash, cw*0.002]);
-        ctx.globalAlpha = 1;
+        color2 = lightenDarkenColor(slider.color, 0.5);
+        color1 = lightenDarkenColor(color2, 1);
+        gradient = ctx.createLinearGradient(0, center.y-slider.r, 0, center.y+slider.r);
+        gradient.addColorStop(0, color2);
+        gradient.addColorStop(1, color1);
+        ctx.lineWidth = sliderWidth;
+        ctx.setLineDash([]);
         ctx.beginPath();
         ctx.arc(center.x, center.y, slider.r, -.5*pi, slider.diff, false);
-        ctx.strokeStyle = slider.color;
+        ctx.strokeStyle = gradient;
+        ctx.stroke();
+        ctx.restore();
+
+        // draw colored paths - foreground
+        ctx.save();
+        color2 = slider.color;
+        color1 = lightenDarkenColor(slider.color, 1);
+        gradient = ctx.createLinearGradient(0, center.y-slider.r, 0, center.y+slider.r);
+        gradient.addColorStop(0, color2);
+        gradient.addColorStop(1, color1);
+        ctx.lineWidth = sliderWidth;
+        ctx.setLineDash([slider.dash, cw*0.003]);
+        ctx.beginPath();
+        ctx.arc(center.x, center.y, slider.r, -.5*pi, slider.diff, false);
+        ctx.strokeStyle = gradient;
         ctx.stroke();
         ctx.restore();
 
         // draw handles
         ctx.save();
+        color1 = '#ffffff';
+        color2 = lightenDarkenColor(color1, -1);
+        gradient = ctx.createLinearGradient(slider.x, slider.y + r, slider.x, slider.y - r);
+        gradient.addColorStop(0, color2);
+        gradient.addColorStop(1, color1);
         ctx.setLineDash([]);
-        ctx.fillStyle = 'white';
+        ctx.fillStyle = gradient;
         ctx.beginPath();
         ctx.arc(slider.x, slider.y, r, 0, 2*pi, false);
         ctx.fill();
         ctx.lineWidth = 1*ratio;
-        ctx.strokeStyle = '#c7c7c7';
+        ctx.strokeStyle = '#c2c6c9';
         ctx.stroke();
         ctx.restore();
 
         // draw data
         ctx.save();
         fontSize = cw * 0.06;
-        ctx.font = 'bold ' + fontSize + 'px Calibri';
-        ctx.fillStyle = '#111';
+        ctx.font = 'bold ' + fontSize + 'px Arial';
+        ctx.fillStyle = fontColor;
         ctx.textAlign = 'left';
         ctx.fillText('$' + slider.value, dataPosition.x, dataPosition.y + index* cw * 0.06);
         ctx.restore();
-        // menu
+        // draw data: menu
         ctx.save();
-        fontSize = cw * 0.025;
-        ctx.font = '400 ' + fontSize + 'px Calibri';
-        ctx.fillStyle = '#111';
+        fontSize = cw * 0.02;
+        ctx.font = '400 ' + fontSize + 'px Arial';
+        ctx.fillStyle = fontColor;
         ctx.textAlign = 'left';
         ctx.fillText(slider.category, dataPosition.x * 11, dataPosition.y + index * cw * 0.06);
         ctx.restore();
-        // color rectangles
+        // draw data: colored rectangles
         ctx.save();
         ctx.fillStyle = slider.color;
-        ctx.rect(dataPosition.x * 8.5, dataPosition.y - cw*0.015 + index * cw * 0.06, cw * 0.025, cw * 0.015);
-        ctx.fill();
+        ctx.fillRect(dataPosition.x * 8.5, dataPosition.y - cw*0.015 + index * cw * 0.06, cw * 0.025, cw * 0.015);
         ctx.restore();
       });
     }  // drawsliders - END
-
     // draw sliders with default properties on load
     drawsliders();
 
 
     // ----------------- HELPER FUNCTIONS -----------------
+
+    // darken/lighten color (allowed formats: 'rgb(x,x,x)', '#xxxxxx')
+    // enter amt (0 to 10: lighten, 0 to -10: darken)
+    function lightenDarkenColor(col,amt) {
+      let cols, change, changeMax, r, g, b, max;
+      // check format and get r, g, b values
+      if (col.length > 7) {
+        // format: 'rgb(x,x,x)'
+        cols = col.match(/\d+/g).map(Number);
+        r = Number(cols[0]);
+        g = Number(cols[1]);
+        b = Number(cols[2]);
+      }
+      else {
+        // format: '#xxxxxx'
+        r = col.substr(1,2);
+        g = col.substr(3,2);
+        b = col.substr(5,2);
+        cols = [r, g, b];
+        // to decimal
+        cols = cols.map(function(col) { return parseInt(col,16); });
+      }
+      // lighten/darken color
+      max = Math.max(...cols);
+      change = amt * 25.5;
+      changeMax = max + change;
+      change = changeMax - max;
+      cols = cols.map(function(col) {
+        col = Math.round(col + change * (col / max));
+        // correct col if not in 0-255 range
+        return (col > 255) ? 255 : (col < 0) ? 0 : col;
+      });
+      // return color in 'rgb(x,x,x)' format
+      return `rgb(${cols[0]}, ${cols[1]}, ${cols[2]})`;
+    }
 
     // round angle to nearest step
     function roundAngle(angle, max, min, step) {
@@ -301,7 +377,7 @@ class Slider {
     }
 
 
-    // ----------------- MOVE SLIDERS -----------------
+    // ----------------- ANIMATE OBJECTS -----------------
 
     // edit slider's properties and redraw sliders
     function moveSlider(slider, event) {
@@ -438,11 +514,11 @@ class Slider {
 const options = {
   container: 'container',
   sliders: [
-    {category: 'Transportation', radius: 1, color: 'red', max: 100, min: 0, step: 2},
-    {category: 'Food', radius: 2, color: '#f3771c', max: 100, min: 0, step: 2},
-    {category: 'Insurance', radius: 3, color: '#009b19', max: 100, min: 0, step: 2},
-    {category: 'Entertainment', radius: 4, color: '#0080bb', max: 860, min: 152, step: 2},
-    {category: 'Health care', radius: 5, color: '#6a427c', max: 100, min: 0, step: 2}
+    {category: 'Transportation', radius: 35, color: '#fc4346', max: 200, min: 50, step: 4},
+    {category: 'Food', radius: 56, color: '#f37a1d', max: 200, min: 40, step: 3},
+    {category: 'Insurance', radius: 77, color: '#009915', max: 250, min: 30, step: 3},
+    {category: 'Entertainment', radius: 98, color: '#0078b4', max: 300, min: 20, step: 3},
+    {category: 'Health care', radius: 119, color: '#603d72', max: 350, min: 0, step: 3}
   ]
 };
 
