@@ -158,7 +158,7 @@ class Slider {
     const cw = ctx.canvas.width;
     const ch = ctx.canvas.height;
     const ratio = this.ratio;  // devicePixelRatio
-    const sliders = this.sliders;
+    const sliders = this.sliders;  // sliders array
     const pi = Math.PI;
     const r = cw * 0.019;  // handle radius
     const fontColor = '#333';
