@@ -12,6 +12,10 @@ class Slider {
       this.ctx;  // declare canvas context
       this.sliders = [];  // declare sliders array
       this.ratio;  // declare devicePixelRatio
+      this.slidersCenter;  // declare sliders center position
+      this.dataPosition;  // declare data position
+      this.instructionsY;  // declare instructions y coordinate
+      this.scale;  // declare scaling factor for drawing object on resize
 
       // make sliders
       this.createCanvas();
@@ -30,7 +34,7 @@ class Slider {
   onResize() {
     canvas.parentNode.removeChild(canvas);
     this.createCanvas();
-    this.editSliderOnResize();
+    this.editSlidersOnResize();
     this.drawObjects();
   }
 
@@ -39,33 +43,66 @@ class Slider {
 
 
   createCanvas() {
+
+    // ----------------- CREATE CANVAS ELEMENT -----------------
+
+    // get DOM container
     const container = document.getElementById(this._options.container);
+    // get container dimensions
     let contW = container.getBoundingClientRect().width;
     let contH = container.getBoundingClientRect().height;
+    // get pixel ratio
     this.ratio = window.devicePixelRatio;
+    // create canvas element in DOM
     const canvas = document.createElement('canvas');
     canvas.id = 'canvas';
 
-    // canvas sizing
-    let h, w;  // css pixels height/width
+    // ----------------- DEFINE CANVAS SIZE -----------------
+
+    // canvas height/width in css pixels
+    let h, w;
     if (contH / contW < 0.65) {
       h = Math.round(contH * .95);
       w = Math.round(h / 0.65);
     }
-    else {
+    else if (contH / contW >= 0.65 && contH / contW < 1) {
       w = Math.round(contW * .95);
       h = Math.round(w * 0.65);
     }
-
+    else if (contH / contW >= 1 && contW / contH > 0.65) {
+      h = Math.round(contH * .95);
+      w = Math.round(h * 0.65);
+    }
+    else {
+      w = Math.round(contW * .95);
+      h = Math.round(w / 0.65);
+    }
+    // set canvas height/width in actual pixels
     canvas.width = w * this.ratio;
     canvas.height = h * this.ratio;
-
+    // set canvas css height/width if needed
     if (this.ratio !== 1) {
       canvas.style.width = w + 'px';
       canvas.style.height = h + 'px';
     }
 
-    // canvas styles
+    // ----------------- SET POSITION OF ELEMENTS AND SCALING FACTOR -----------------
+
+    if (w >= h) {
+      this.scale = w * this.ratio;
+      this.slidersCenter = {x: w*this.ratio*0.67, y: h*this.ratio*0.46};
+      this.dataPosition = {x: w*this.ratio*0.02, y: h*this.ratio*0.25};
+      this.instructionsY = h * this.ratio * 0.97;
+    }
+    else {
+      this.scale = h * this.ratio;
+      this.slidersCenter = {x: w*this.ratio*0.5, y: h*this.ratio*0.35};
+      this.dataPosition = {x: w*this.ratio*0.23, y: h*this.ratio*0.7};
+      this.instructionsY = h * this.ratio * 0.04;
+    }
+
+    // ----------------- DEFINE STYLES -----------------
+
     canvas.style.position = 'relative';
     canvas.style.top = '50%';
     canvas.style.left = '50%';
@@ -73,77 +110,76 @@ class Slider {
     // canvas.style.border = '1px dashed grey';
     canvas.style.touchAction = 'none';
 
+    // ----------------- APPEND CANVAS TO CONTAINER -----------------
+
     // create canvas in DOM
     container.appendChild(canvas);
-    // get ctx
+    // get 2d context
     this.ctx = canvas.getContext('2d');
-  }  // createCanvas - END
+  }  // createCanvas --- END
 
 
   // +++++++++++++++++++++++++++++++++++ MAKE SLIDERS ARRAY +++++++++++++++++++++++++++++++++++
 
 
   makeSliders() {
-    // global variables
+    // define variables
     const options = this._options;
     const ctx = this.ctx;
     const cw = ctx.canvas.width;
     const ch = ctx.canvas.height;
+    const scale = this.scale;
     const pi = Math.PI;
-    // sliders center position
-    const center = {x: cw*0.67, y: ch*0.46};
+    // define sliders center position
+    const center = this.slidersCenter;
+    // get sliders array
     const sliders = this.sliders;
 
-    // make array of sliders
+    // fill sliders array
     for (let i = 0; i < options.sliders.length; i++) {
       sliders.push({
         category: options.sliders[i].category,
-        r: options.sliders[i].radius * cw / 450,
+        r: options.sliders[i].radius * scale / 450,
         color: options.sliders[i].color,
         max: options.sliders[i].max,
         min: options.sliders[i].min,
         value: options.sliders[i].min,
         step: options.sliders[i].step,
-        // default position of handles
         diff: -0.5*pi,
+        // default position of handles
         x: center.x,
-        y: center.y - options.sliders[i].radius * cw / 450
+        y: center.y - options.sliders[i].radius * scale / 450
       });
     }
-
-    // add dashes to sliders
-    for (let i = 0; i < options.sliders.length; i++) {
+    // add dashes (step angle in radians) to sliders
+    for (let i = 0; i < sliders.length; i++) {
       const slider = sliders[i];
-      const r = sliders[i].r;
-      const max = sliders[i].max;
-      const min = sliders[i].min;
-      const step = sliders[i].step;
+      const r = slider.r;
+      const max = slider.max;
+      const min = slider.min;
+      const step = slider.step;
       const remainder = (max - min) % step;
-      slider.dash = 2*pi*r * (step / (max - min)) - cw*0.003;
+      slider.dash = 2*pi*r * (step / (max - min)) - scale*0.003;
     }
-  }  // makeSliders - END
+  }  // makeSliders --- END
 
 
-  // +++++++++++++++++++++++++++++++++++ EDIT SLIDERS ON RESIZE +++++++++++++++++++++++++++++++++++
+  // +++++++++++++++++++++++++++++++++++ EDIT SLIDERS PROPERTIES ON RESIZE +++++++++++++++++++++++++++++++++++
 
 
-  editSliderOnResize() {
-    let r, slider;
-    const cw = this.ctx.canvas.width;
-    const ch = this.ctx.canvas.height;
-    // sliders center position
-    const center = {x: cw * 0.67, y: ch * 0.46};
+  editSlidersOnResize() {
+    let slider;
+    // get canvas scale
+    const scale = this.scale;
+    // get sliders' center position
+    const center = this.slidersCenter;
     // edit sliders' properties
     for (let i = 0; i < options.sliders.length; i++) {
       slider = this.sliders[i];
-      // edit radius
-      r = options.sliders[i].radius * cw / 450;
-      slider.r = r;
-      // edit dash
-      slider.dash = 2*Math.PI*r * (slider.step / (slider.max - slider.min)) - cw*0.003;
-      // edit handle coordinates
-      slider.x = Math.cos(slider.diff) * r + center.x;
-      slider.y = Math.sin(slider.diff) * r + center.y;
+      slider.r = options.sliders[i].radius * scale / 450;
+      slider.dash = 2*Math.PI*slider.r * (slider.step / (slider.max - slider.min)) - scale*0.003;
+      slider.x = Math.cos(slider.diff) * slider.r + center.x;
+      slider.y = Math.sin(slider.diff) * slider.r + center.y;
     };
   }
 
@@ -159,16 +195,19 @@ class Slider {
     const ctx = this.ctx;
     const cw = ctx.canvas.width;
     const ch = ctx.canvas.height;
+    const scale = this.scale;
     const ratio = this.ratio;  // devicePixelRatio
     const sliders = this.sliders;  // sliders array
     const pi = Math.PI;
-    const r = cw * 0.019;  // handle radius
+    const r = scale * 0.019;  // handle radius
     const fontColor = '#333';
-    const sliderWidth = cw * 0.032;
+    const lineWidth = scale * 0.032;
     // sliders center position
-    const center = {x: cw*0.67, y: ch*0.46};
+    const center = this.slidersCenter;
     // data position
-    const dataPosition = {x: cw*0.02, y: ch*0.25};
+    const dataPosition = this.dataPosition;
+    // instructions y coordinate
+    const instructionsY = this.instructionsY;
 
 
     // ----------------- DRAW OBJECTS -----------------
@@ -179,29 +218,29 @@ class Slider {
       // draw background
       ctx.save();
       color1 = '#efeff0';
-      color2 = lightenDarkenColor(color1, -2);
-      gradient = ctx.createLinearGradient(ch/2, cw, ch/2, 0);
+      color2 = '#cacbcd';
+      gradient = ctx.createLinearGradient(cw/2, ch, cw/2, 0);
       gradient.addColorStop(0, color2);
       gradient.addColorStop(1, color1);
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, cw, ch);
       ctx.restore();
 
-      // draw instructions under slider
+      // draw instructions
       ctx.save();
-      fontSize = cw * 0.02;
+      fontSize = scale * 0.02;
       instruction = 'ADJUST DIAL TO ENTER EXPENSES';
       ctx.font = '900 italic ' + fontSize + 'px Arial';
       ctx.fillStyle = fontColor;
       ctx.textAlign = 'center';
-      ctx.fillText(instruction, center.x, ch * 0.97);
+      ctx.fillText(instruction, center.x, instructionsY);
       ctx.restore();
-      // draw sliders
-      sliders.forEach(function(slider, index) {
 
+      // draw sliders and data
+      sliders.forEach(function(slider, index) {
         // draw sliders backgrounds (full grey circles)
         ctx.save();
-        ctx.lineWidth = sliderWidth;
+        ctx.lineWidth = lineWidth;
         ctx.setLineDash([slider.dash, cw*0.003]);
         color1 = '#d7d7d7';
         color2 = lightenDarkenColor(color1, -1);
@@ -213,7 +252,6 @@ class Slider {
         ctx.arc(center.x, center.y, slider.r, -.5*pi, 1.5*pi, false);
         ctx.stroke();
         ctx.restore();
-
         // draw colored paths - background
         ctx.save();
         color2 = lightenDarkenColor(slider.color, 0.5);
@@ -221,14 +259,13 @@ class Slider {
         gradient = ctx.createLinearGradient(0, center.y-slider.r, 0, center.y+slider.r);
         gradient.addColorStop(0, color2);
         gradient.addColorStop(1, color1);
-        ctx.lineWidth = sliderWidth;
+        ctx.lineWidth = lineWidth;
         ctx.setLineDash([]);
         ctx.beginPath();
         ctx.arc(center.x, center.y, slider.r, -.5*pi, slider.diff, false);
         ctx.strokeStyle = gradient;
         ctx.stroke();
         ctx.restore();
-
         // draw colored paths - foreground
         ctx.save();
         color2 = slider.color;
@@ -236,14 +273,13 @@ class Slider {
         gradient = ctx.createLinearGradient(0, center.y-slider.r, 0, center.y+slider.r);
         gradient.addColorStop(0, color2);
         gradient.addColorStop(1, color1);
-        ctx.lineWidth = sliderWidth;
+        ctx.lineWidth = lineWidth;
         ctx.setLineDash([slider.dash, cw*0.003]);
         ctx.beginPath();
         ctx.arc(center.x, center.y, slider.r, -.5*pi, slider.diff, false);
         ctx.strokeStyle = gradient;
         ctx.stroke();
         ctx.restore();
-
         // draw handles
         ctx.save();
         color1 = '#ffffff';
@@ -260,30 +296,29 @@ class Slider {
         ctx.strokeStyle = '#c2c6c9';
         ctx.stroke();
         ctx.restore();
-
         // draw data
         ctx.save();
-        fontSize = cw * 0.06;
+        fontSize = scale * 0.06;
         ctx.font = 'bold ' + fontSize + 'px Arial';
         ctx.fillStyle = fontColor;
         ctx.textAlign = 'left';
-        ctx.fillText('$' + slider.value, dataPosition.x, dataPosition.y + index* cw * 0.06);
+        ctx.fillText('$' + slider.value, dataPosition.x, dataPosition.y + index*scale*0.06);
         ctx.restore();
         // draw data: menu
         ctx.save();
-        fontSize = cw * 0.02;
+        fontSize = scale * 0.02;
         ctx.font = '400 ' + fontSize + 'px Arial';
         ctx.fillStyle = fontColor;
         ctx.textAlign = 'left';
-        ctx.fillText(slider.category, dataPosition.x * 11, dataPosition.y + index * cw * 0.06);
+        ctx.fillText(slider.category, dataPosition.x + 0.2*scale, dataPosition.y + index*scale*0.06);
         ctx.restore();
         // draw data: colored rectangles
         ctx.save();
         ctx.fillStyle = slider.color;
-        ctx.fillRect(dataPosition.x * 8.5, dataPosition.y - cw*0.015 + index * cw * 0.06, cw * 0.025, cw * 0.015);
+        ctx.fillRect(dataPosition.x + 0.16*scale, dataPosition.y + index*scale*0.06 - scale*0.014, scale*0.025, scale*0.015);
         ctx.restore();
       });
-    }  // drawsliders - END
+    }  // drawsliders --- END
     // draw sliders with default properties on load
     drawsliders();
 
@@ -507,9 +542,9 @@ class Slider {
     ctx.canvas.addEventListener('mouseup', onMouseUp);
 
 
-  }  // drawObjects - END
+  }  // drawObjects --- END
 
-}; // Slider class - END
+}; // Slider class --- END
 
 
 // ++++++++++++++++++++++++++++++++++++++++ INSTANTIATE SLIDER CLASS ++++++++++++++++++++++++++++++++++++++++
