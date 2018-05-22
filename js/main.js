@@ -1,6 +1,7 @@
 
 // +++++++++++++++++++++++++++++++++++ CLASS START +++++++++++++++++++++++++++++++++++
 
+
 class Slider {
 
 
@@ -11,7 +12,7 @@ class Slider {
       this._options = options;
       this.ctx;  // declare canvas context
       this.sliders = [];  // declare sliders array
-      this.ratio;  // declare devicePixelRatio
+      this.dpi;  // declare devicePixelRatio
       this.slidersCenter;  // declare sliders center position
       this.dataPosition;  // declare data position
       this.instructionsY;  // declare instructions y coordinate
@@ -52,7 +53,7 @@ class Slider {
     let contW = container.getBoundingClientRect().width;
     let contH = container.getBoundingClientRect().height;
     // get pixel ratio
-    this.ratio = window.devicePixelRatio;
+    this.dpi = window.devicePixelRatio;
     // create canvas element in DOM
     const canvas = document.createElement('canvas');
     canvas.id = 'canvas';
@@ -78,10 +79,10 @@ class Slider {
       h = Math.round(w / 0.65);
     }
     // set canvas height/width in actual pixels
-    canvas.width = w * this.ratio;
-    canvas.height = h * this.ratio;
+    canvas.width = w * this.dpi;
+    canvas.height = h * this.dpi;
     // set canvas css height/width if needed
-    if (this.ratio !== 1) {
+    if (this.dpi !== 1) {
       canvas.style.width = w + 'px';
       canvas.style.height = h + 'px';
     }
@@ -89,16 +90,16 @@ class Slider {
     // ----------------- SET POSITION OF ELEMENTS AND SCALING FACTOR -----------------
 
     if (w >= h) {
-      this.scale = w * this.ratio;
-      this.slidersCenter = {x: w*this.ratio*0.67, y: h*this.ratio*0.46};
-      this.dataPosition = {x: w*this.ratio*0.02, y: h*this.ratio*0.25};
-      this.instructionsY = h * this.ratio * 0.97;
+      this.scale = w * this.dpi;
+      this.slidersCenter = {x: w*this.dpi*0.67, y: h*this.dpi*0.46};
+      this.dataPosition = {x: w*this.dpi*0.02, y: h*this.dpi*0.25};
+      this.instructionsY = h * this.dpi * 0.97;
     }
     else {
-      this.scale = h * this.ratio;
-      this.slidersCenter = {x: w*this.ratio*0.5, y: h*this.ratio*0.35};
-      this.dataPosition = {x: w*this.ratio*0.23, y: h*this.ratio*0.7};
-      this.instructionsY = h * this.ratio * 0.04;
+      this.scale = h * this.dpi;
+      this.slidersCenter = {x: w*this.dpi*0.5, y: h*this.dpi*0.35};
+      this.dataPosition = {x: w*this.dpi*0.23, y: h*this.dpi*0.7};
+      this.instructionsY = h * this.dpi * 0.04;
     }
 
     // ----------------- DEFINE STYLES -----------------
@@ -196,12 +197,12 @@ class Slider {
     const cw = ctx.canvas.width;
     const ch = ctx.canvas.height;
     const scale = this.scale;
-    const ratio = this.ratio;  // devicePixelRatio
+    const dpi = this.dpi;  // devicePixelRatio
     const sliders = this.sliders;  // sliders array
     const pi = Math.PI;
     const r = scale * 0.019;  // handle radius
     const fontColor = '#333';
-    const lineWidth = scale * 0.032;
+    const lineWidth = scale * 0.032;  // sliders' path width
     // sliders center position
     const center = this.slidersCenter;
     // data position
@@ -292,7 +293,7 @@ class Slider {
         ctx.beginPath();
         ctx.arc(slider.x, slider.y, r, 0, 2*pi, false);
         ctx.fill();
-        ctx.lineWidth = 1*ratio;
+        ctx.lineWidth = scale*0.002;
         ctx.strokeStyle = '#c2c6c9';
         ctx.stroke();
         ctx.restore();
@@ -424,8 +425,8 @@ class Slider {
       mouseY = event.clientY - canvas.getBoundingClientRect().top;
       // get x & y distance from slider center to mouse
       // multiply by device pixel ratio to get canvas pixels
-      x = mouseX * ratio - center.x;
-      y = mouseY * ratio - center.y;
+      x = mouseX * dpi - center.x;
+      y = mouseY * dpi - center.y;
       // get distance from slider center to mouse
       z = (x**2 + y**2)**0.5;
       // get handle coordinates
@@ -461,14 +462,14 @@ class Slider {
       mouseX = event.clientX - canvas.getBoundingClientRect().left;
       mouseY = event.clientY - canvas.getBoundingClientRect().top;
       // x & y distance from slider center to mouse
-      x = mouseX * ratio - center.x;
-      y = mouseY * ratio - center.y;
+      x = mouseX * dpi - center.x;
+      y = mouseY * dpi - center.y;
       // absolute distance from slider center to mouse
       z = ((x**2 + y**2)**0.5);
 
       // check if user clicked on one of the sliders
       sliders.forEach(function(slider) {
-        if (z < slider.r + cw*0.023 && z > slider.r - cw*0.017) {
+        if (z < slider.r + scale*0.022 && z > slider.r - scale*0.022) {
           // change slider position on click
           pickedSlider = slider;
           moveSlider(slider, event);
@@ -479,9 +480,10 @@ class Slider {
         }
       });
     }
+
     // touchdown function
     let touchedSlider;  // slider that is dragged
-    function onTouchDown(event) {
+    function onTouchStart(event) {
       event.preventDefault();
       let mouseX, mouseY, x, y, z;
       // variable used to break out of forEach loop
@@ -490,14 +492,14 @@ class Slider {
       mouseX = event.touches[0].clientX - canvas.getBoundingClientRect().left;
       mouseY = event.touches[0].clientY - canvas.getBoundingClientRect().top;
       // x & y distance from slider center to mouse
-      x = mouseX * ratio - center.x;
-      y = mouseY * ratio - center.y;
+      x = mouseX * dpi - center.x;
+      y = mouseY * dpi - center.y;
       // absolute distance from slider center to mouse
       z = ((x**2 + y**2)**0.5);
 
       // check if user clicked on one of the sliders
       sliders.forEach(function(slider) {
-        if (!brk && z < slider.r + cw*0.025 && z > slider.r - cw*0.025) {
+        if (!brk && z < slider.r + scale*0.025 && z > slider.r - scale*0.025) {
           // change slider position on click
           touchedSlider = slider;
           moveSlider(slider, event.touches[0]);
@@ -513,6 +515,7 @@ class Slider {
     function onMouseMove(event) {
       moveSlider(pickedSlider, event);
     }
+
     // touchmove function
     function onTouchMove(event) {
       event.preventDefault();
@@ -525,6 +528,7 @@ class Slider {
       // stop listening to mousemove
       ctx.canvas.removeEventListener('mousemove', onMouseMove);
     }
+
     // touchup function
     function onTouchUp() {
       event.preventDefault();
@@ -533,7 +537,7 @@ class Slider {
     }
 
     // listen to touch down
-    ctx.canvas.addEventListener('touchstart', onTouchDown);
+    ctx.canvas.addEventListener('touchstart', onTouchStart);
     // listen to mouse down
     ctx.canvas.addEventListener('mousedown', onMouseDown);
     // listen to touch end
@@ -555,10 +559,10 @@ const options = {
   container: 'container',
   sliders: [
     {category: 'Transportation', radius: 35, color: '#fc4346', max: 200, min: 50, step: 4},
-    {category: 'Food', radius: 56, color: '#f37a1d', max: 200, min: 40, step: 3},
-    {category: 'Insurance', radius: 77, color: '#009915', max: 250, min: 30, step: 3},
-    {category: 'Entertainment', radius: 98, color: '#0078b4', max: 300, min: 20, step: 3},
-    {category: 'Health care', radius: 119, color: '#603d72', max: 350, min: 0, step: 3}
+    {category: 'Food', radius: 55, color: '#f37a1d', max: 200, min: 40, step: 3},
+    {category: 'Insurance', radius: 75, color: '#009915', max: 250, min: 30, step: 3},
+    {category: 'Entertainment', radius: 95, color: '#0078b4', max: 300, min: 20, step: 3},
+    {category: 'Health care', radius: 115, color: '#603d72', max: 350, min: 0, step: 3}
   ]
 };
 
