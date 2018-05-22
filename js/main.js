@@ -4,7 +4,7 @@
 class Slider {
 
 
-  // +++++++++++++++++++++++++++++++++++ CONSTRUCTOR METHOD +++++++++++++++++++++++++++++++++++
+  // +++++++++++++++++++++++++++++++++++ CONSTRUCTOR +++++++++++++++++++++++++++++++++++
 
 
   constructor(options) {
@@ -13,19 +13,20 @@ class Slider {
       this.sliders = [];  // declare sliders array
       this.ratio;  // declare devicePixelRatio
 
-      // run methods to draw canvas and sliders
+      // make sliders
       this.createCanvas();
-      this.createSliders();
+      this.makeSliders();
       this.drawObjects();
 
-      // recreate canvas and edit sliders on resize
+      // listen to resize event
       window.addEventListener('resize', this.onResize.bind(this));
   }
 
 
-  // +++++++++++++++++++++++++++++++++++ WINDOW RESIZE METHOD +++++++++++++++++++++++++++++++++++
+  // +++++++++++++++++++++++++++++++++++ WINDOW RESIZE +++++++++++++++++++++++++++++++++++
 
 
+  // recreate canvas and edit sliders
   onResize() {
     canvas.parentNode.removeChild(canvas);
     this.createCanvas();
@@ -46,7 +47,7 @@ class Slider {
     canvas.id = 'canvas';
 
     // canvas sizing
-    var h, w;  // css pixels height/width
+    let h, w;  // css pixels height/width
     if (contH / contW < 0.65) {
       h = Math.round(contH * .95);
       w = Math.round(h / 0.65);
@@ -56,14 +57,15 @@ class Slider {
       h = Math.round(w * 0.65);
     }
 
+    canvas.width = w * this.ratio;
+    canvas.height = h * this.ratio;
+
     if (this.ratio !== 1) {
       canvas.style.width = w + 'px';
       canvas.style.height = h + 'px';
     }
 
     // canvas styles
-    canvas.width = w * this.ratio;
-    canvas.height = h * this.ratio;
     canvas.style.position = 'relative';
     canvas.style.top = '50%';
     canvas.style.left = '50%';
@@ -81,7 +83,7 @@ class Slider {
   // +++++++++++++++++++++++++++++++++++ MAKE SLIDERS ARRAY +++++++++++++++++++++++++++++++++++
 
 
-  createSliders() {
+  makeSliders() {
     // global variables
     const options = this._options;
     const ctx = this.ctx;
@@ -119,7 +121,7 @@ class Slider {
       const remainder = (max - min) % step;
       slider.dash = 2*pi*r * (step / (max - min)) - cw*0.003;
     }
-  }  // createSliders - END
+  }  // makeSliders - END
 
 
   // +++++++++++++++++++++++++++++++++++ EDIT SLIDERS ON RESIZE +++++++++++++++++++++++++++++++++++
@@ -445,6 +447,7 @@ class Slider {
     // touchdown function
     let touchedSlider;  // slider that is dragged
     function onTouchDown(event) {
+      event.preventDefault();
       let mouseX, mouseY, x, y, z;
       // variable used to break out of forEach loop
       let brk = false;
@@ -477,6 +480,7 @@ class Slider {
     }
     // touchmove function
     function onTouchMove(event) {
+      event.preventDefault();
       var touch = event.touches[0];
       moveSlider(touchedSlider, touch);
     }
@@ -488,6 +492,7 @@ class Slider {
     }
     // touchup function
     function onTouchUp() {
+      event.preventDefault();
       // stop listening to mousemove
       ctx.canvas.removeEventListener('touchmove', onTouchMove);
     }
