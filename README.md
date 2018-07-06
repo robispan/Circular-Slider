@@ -1,4 +1,4 @@
-# Circular-Slider (job application test)
+# Circular-Slider (job application task)
 
 ## Specification
 
